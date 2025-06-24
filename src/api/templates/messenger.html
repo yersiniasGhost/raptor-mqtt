@@ -1,0 +1,641 @@
+{# templates/mqtt_control.html #}
+{% extends "base.html" %}
+
+{% block title %}MQTT Control{% endblock %}
+
+{% block head %}
+<style>
+    .raptor-selector {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .raptor-info {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .message-templates {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .config-title {
+        margin-top: 0;
+        color: #2c3e50;
+        font-size: 1.5em;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 5px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        background-color: #e0a800;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+
+    .raptor-grid {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px 20px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;lor: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    .raptor-label {
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .raptor-value {
+        color: #212529;
+    }
+
+    .message-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .message-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        background: #f8f9fa;
+    }
+
+    .message-card h4 {
+        margin: 0 0 10px 0;
+        color: #495057;
+        font-size: 16px;
+    }
+
+    .message-card p {
+        margin: 5px 0;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .json-display {
+        width: 100%;
+        height: 150px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 10px;
+        resize: vertical;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-connected {
+        background-color: #28a745;
+    }
+
+    .status-disconnected {
+        background-color: #dc3545;
+    }
+
+    .status-unknown {
+        background-color: #6c757d;
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>MQTT Raptor Control Interface</h1>
+
+<!-- MQTT Connection Status -->
+<div class="raptor-selector">
+    <h3 class="config-title">
+        <span class="status-indicator status-unknown" id="mqtt-status-indicator"></span>
+        MQTT Connection Status
+    </h3>
+    <div class="raptor-grid">
+        <span class="raptor-label">Broker:</span>
+        <span class="raptor-value" id="mqtt-broker">{{ mqtt_broker_ip }}:{{ mqtt_broker_port }}</span>
+
+        <span class="raptor-label">Status:</span>
+        <span class="raptor-value" id="mqtt-status">Checking...</span>
+
+        <span class="raptor-label">Messages Received:</span>
+        <span class="raptor-value" id="messages-received">0</span>
+
+        <span class="raptor-label">Messages Sent:</span>
+        <span class="raptor-value" id="messages-sent">0</span>
+    </div>
+    <button class="btn btn-primary" onclick="testMQTTConnection()">Test Connection</button>
+</div>
+
+<!-- Raptor Selection -->
+<div class="raptor-selector">
+    <h3 class="config-title">Select Raptor Device</h3>
+    <div class="form-group">
+        <label for="raptor-select">Available Raptors:</label>
+        <select id="raptor-select" class="form-control" onchange="selectRaptor()">
+            <option value="">-- Select a Raptor --</option>
+            {% for raptor in available_raptors %}
+            <option value="{{ raptor.mac }}" data-name="{{ raptor.name }}" data-location="{{ raptor.location }}">
+                {{ raptor.name }} ({{ raptor.mac }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<!-- Selected Raptor Information -->
+<div class="raptor-info" id="raptor-info">
+    <h3 class="config-title">Raptor Information</h3>
+    <div class="raptor-grid">
+        <span class="raptor-label">Name:</span>
+        <span class="raptor-value" id="raptor-name">-</span>
+
+        <span class="raptor-label">MAC Address:</span>
+        <span class="raptor-value" id="raptor-mac">-</span>
+
+        <span class="raptor-label">Location:</span>
+        <span class="raptor-value" id="raptor-location">-</span>
+
+        <span class="raptor-label">Last Seen:</span>
+        <span class="raptor-value" id="raptor-last-seen">-</span>
+
+        <span class="raptor-label">MQTT Topic:</span>
+        <span class="raptor-value" id="raptor-topic">-</span>
+
+        <span class="raptor-label">Status:</span>
+        <span class="raptor-value" id="raptor-status">
+            <span class="status-indicator status-unknown"></span>Unknown
+        </span>
+    </div>
+</div>
+
+<!-- Message Templates -->
+<div class="message-templates" id="message-templates">
+    <h3 class="config-title">Stock Message Templates</h3>
+
+    <div class="message-buttons" id="message-buttons">
+        {% for template in message_templates %}
+        <div class="message-card">
+            <h4>{{ template.title }}</h4>
+            <p><strong>Action:</strong> {{ template.action }}</p>
+            <p><strong>Description:</strong> {{ template.description }}</p>
+
+            {% if template.parameters %}
+            <form id="form-{{ template.id }}" style="margin: 10px 0;">
+                {% for param_name, param_def in template.parameters.items() %}
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 3px;">
+                        {{ param_def.title }}:
+                    </label>
+
+                    {% if param_def.type == 'selection' %}
+                    <select name="{{ param_name }}" class="form-control" style="font-size: 12px; padding: 4px;">
+                        {% for option in param_def.options %}
+                        <option value="{{ option }}">{{ option }}</option>
+                        {% endfor %}
+                    </select>
+
+                    {% elif param_def.type == 'checkbox' %}
+                    <label style="font-size: 12px; font-weight: normal;">
+                        <input type="checkbox" name="{{ param_name }}" value="true" style="margin-right: 5px;">
+                        {{ param_def.title }}
+                    </label>
+
+                    {% elif param_def.type == 'radio-buttons' %}
+                    {% for option in param_def.options %}
+                    <label style="font-size: 12px; font-weight: normal; display: block; margin: 2px 0;">
+                        <input type="radio" name="{{ param_name }}" value="{{ option }}" style="margin-right: 5px;"
+                               {% if loop.first %}checked{% endif %}>
+                        {{ option }}
+                    </label>
+                    {% endfor %}
+
+                    {% elif param_def.type == 'text' %}
+                    <input type="text" name="{{ param_name }}" class="form-control"
+                           style="font-size: 12px; padding: 4px;"
+                           placeholder="{{ param_def.placeholder | default('') }}">
+
+                {% elif param_def.type == 'number' %}
+                <input type="number" name="{{ param_name }}" class="form-control"
+                       style="font-size: 12px; padding: 4px;"
+                       min="{{ param_def.min | default('') }}"
+                       max="{{ param_def.max | default('') }}"
+                       step="{{ '1' if param_def.type == 'integer' else (param_def.step | default('1')) }}"
+                       value="{{ param_def.default | default('') }}"
+                       >
+                     {% elif param_def.type == 'integer' %}
+                <input type="number" name="{{ param_name }}" class="form-control"
+                       style="font-size: 12px; padding: 4px;"
+                       min="{{ param_def.min | default('') }}"
+                       max="{{ param_def.max | default('') }}"
+                       step="{{ '1' if param_def.type == 'integer' else (param_def.step | default('1')) }}"
+                       value="{{ param_def.default | default('') }}"
+                       pattern="[0-9]*">
+                    {% endif %}
+
+                </div>
+                {% endfor %}
+            </form>
+            {% endif %}
+
+            <button class="btn {{ template.button_class | default('btn-primary') }}"
+                    onclick="sendStockMessage('{{ template.id }}')">
+                {{ template.button_text | default('Send') }}
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Custom Message Section -->
+    <div style="margin-top: 30px; border-top: 2px solid #dee2e6; padding-top: 20px;">
+        <h4>Custom Message</h4>
+        <div class="form-group">
+            <label for="custom-action">Action:</label>
+            <input type="text" id="custom-action" class="form-control" placeholder="e.g., firmware_update">
+        </div>
+
+        <div class="form-group">
+            <label for="custom-params">Parameters (JSON):</label>
+            <textarea id="custom-params" class="json-display" placeholder='{"param1": "value1", "param2": "value2"}'></textarea>
+        </div>
+
+        <div class="form-group">
+            <button class="btn btn-warning" onclick="sendCustomMessage()">Send Custom Message</button>
+            <button class="btn btn-primary" onclick="previewMessage()">Preview JSON</button>
+        </div>
+    </div>
+</div>
+
+<!-- Message Preview/Response Area -->
+<div class="raptor-selector">
+    <h3 class="config-title">Message Preview & Response</h3>
+    <div class="form-group">
+        <label for="message-preview">Last Message Sent:</label>
+        <textarea id="message-preview" class="json-display" readonly></textarea>
+    </div>
+    <div class="form-group">
+        <label for="message-response">Response:</label>
+        <textarea id="message-response" class="json-display" readonly></textarea>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedRaptor = null;
+let messageCount = { sent: 0, received: 0 };
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    testMQTTConnection();
+    // Add any startup logic here
+});
+
+function selectRaptor() {
+    const select = document.getElementById('raptor-select');
+    const selectedOption = select.options[select.selectedIndex];
+
+    if (selectedOption.value) {
+        selectedRaptor = {
+            mac: selectedOption.value,
+            name: selectedOption.dataset.name,
+            location: selectedOption.dataset.location
+        };
+
+        // Update raptor info display
+        document.getElementById('raptor-name').textContent = selectedRaptor.name;
+        document.getElementById('raptor-mac').textContent = selectedRaptor.mac;
+        document.getElementById('raptor-location').textContent = selectedRaptor.location;
+        document.getElementById('raptor-topic').textContent = `raptors/${selectedRaptor.mac}/messages`;
+
+        // Show info and templates sections
+        document.getElementById('raptor-info').style.display = 'block';
+        document.getElementById('message-templates').style.display = 'block';
+
+        // Fetch additional raptor status
+        fetchRaptorStatus(selectedRaptor.mac);
+    } else {
+        selectedRaptor = null;
+        document.getElementById('raptor-info').style.display = 'none';
+        document.getElementById('message-templates').style.display = 'none';
+    }
+}
+
+async function testMQTTConnection() {
+    const indicator = document.getElementById('mqtt-status-indicator');
+    const status = document.getElementById('mqtt-status');
+
+    indicator.className = 'status-indicator status-unknown';
+    status.textContent = 'Testing...';
+
+    try {
+        const response = await fetch('/messenger/test-connection', { method: 'POST' });
+        const result = await response.json();
+
+        if (result.success) {
+            indicator.className = 'status-indicator status-connected';
+            status.textContent = 'Connected';
+        } else {
+            indicator.className = 'status-indicator status-disconnected';
+            status.textContent = 'Disconnected: ' + (result.error || 'Unknown error');
+        }
+    } catch (error) {
+        indicator.className = 'status-indicator status-disconnected';
+        status.textContent = 'Connection test failed: ' + error.message;
+    }
+}
+
+async function fetchRaptorStatus(mac) {
+    try {
+        const response = await fetch(`/messenger/raptor-status/${mac}`);
+        const status = await response.json();
+
+        document.getElementById('raptor-last-seen').textContent = status.last_seen || 'Never';
+
+        const statusElement = document.getElementById('raptor-status');
+        const indicator = statusElement.querySelector('.status-indicator');
+
+        if (status.online) {
+            indicator.className = 'status-indicator status-connected';
+            statusElement.innerHTML = '<span class="status-indicator status-connected"></span>Online';
+        } else {
+            indicator.className = 'status-indicator status-disconnected';
+            statusElement.innerHTML = '<span class="status-indicator status-disconnected"></span>Offline';
+        }
+    } catch (error) {
+        console.error('Failed to fetch raptor status:', error);
+    }
+}
+
+async function sendStockMessage(templateId) {
+    if (!selectedRaptor) {
+        alert('Please select a raptor first');
+        return;
+    }
+
+    // Collect form data for this template
+    const form = document.getElementById(`form-${templateId}`);
+    const params = {};
+
+    if (form) {
+        const formData = new FormData(form);
+
+        // Handle different input types
+        for (let [key, value] of formData.entries()) {
+            const input = form.querySelector(`input[name="${key}"], select[name="${key}"]`);
+            if (input) {
+                if (input.type === 'checkbox') {
+                    params[key] = input.checked;
+                } else if (input.type === 'number') {
+                    // Convert number inputs to actual numbers
+                    const numValue = parseFloat(value);
+                    params[key] = isNaN(numValue) ? value : numValue;
+                } else {
+                    params[key] = value;
+                }
+            }
+        }
+
+        // Handle unchecked checkboxes (they don't appear in FormData)
+        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            if (!formData.has(checkbox.name)) {
+                params[checkbox.name] = false;
+            }
+        });
+    }
+
+    try {
+        const response = await fetch('/messenger/send-stock-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                raptor_mac: selectedRaptor.mac,
+                template_id: templateId,
+                parameters: params
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            updateMessagePreview(result.message);
+            updateMessageCount('sent');
+
+            // Handle response
+            if (result.response && !result.response.error) {
+                showSuccessMessage('Message sent and response received successfully');
+                updateMessageResponse(result.response);
+            } else if (result.warning) {
+                showWarningMessage(result.warning);
+                updateMessageResponse(result.response);
+            } else {
+                showSuccessMessage('Message sent successfully');
+            }
+        } else {
+            showErrorMessage('Failed to send message: ' + result.error);
+        }
+    } catch (error) {
+        showErrorMessage('Error sending message: ' + error.message);
+    }
+}
+
+async function sendCustomMessage() {
+    if (!selectedRaptor) {
+        alert('Please select a raptor first');
+        return;
+    }
+
+    const action = document.getElementById('custom-action').value;
+    const paramsText = document.getElementById('custom-params').value;
+
+    if (!action) {
+        alert('Please enter an action');
+        return;
+    }
+
+    let params = {};
+    if (paramsText) {
+        try {
+            params = JSON.parse(paramsText);
+        } catch (error) {
+            alert('Invalid JSON in parameters: ' + error.message);
+            return;
+        }
+    }
+
+    try {
+        const response = await fetch('/messenger/send-custom-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                raptor_mac: selectedRaptor.mac,
+                action: action,
+                params: params
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            updateMessagePreview(result.message);
+            updateMessageCount('sent');
+            showSuccessMessage('Custom message sent successfully');
+        } else {
+            showErrorMessage('Failed to send message: ' + result.error);
+        }
+    } catch (error) {
+        showErrorMessage('Error sending message: ' + error.message);
+    }
+}
+
+function previewMessage() {
+    const action = document.getElementById('custom-action').value;
+    const paramsText = document.getElementById('custom-params').value;
+
+    if (!action) {
+        alert('Please enter an action first');
+        return;
+    }
+
+    let params = {};
+    if (paramsText) {
+        try {
+            params = JSON.parse(paramsText);
+        } catch (error) {
+            alert('Invalid JSON in parameters: ' + error.message);
+            return;
+        }
+    }
+
+    const message = {
+        action: action,
+        params: params,
+        timestamp: new Date().toISOString()
+    };
+
+    updateMessagePreview(message);
+}
+
+function updateMessagePreview(message) {
+    const preview = document.getElementById('message-preview');
+    preview.value = JSON.stringify(message, null, 2);
+}
+
+function updateMessageResponse(response) {
+    const responseArea = document.getElementById('message-response');
+    let txt = JSON.stringify(response, null, 2);
+    txt = txt.replace(/\\n/g, '\n');
+    responseArea.value = txt ;
+<!--    responseArea.value = JSON.stringify(response, null, 2);-->
+}
+
+function updateMessageCount(type) {
+    messageCount[type]++;
+    if (type === 'sent') {
+        document.getElementById('messages-sent').textContent = messageCount.sent;
+    } else {
+        document.getElementById('messages-received').textContent = messageCount.received;
+    }
+}
+
+function showSuccessMessage(message) {
+    document.getElementById('message-response').value = `SUCCESS: ${message}\nTime: ${new Date().toLocaleString()}`;
+}
+
+function showWarningMessage(message) {
+    document.getElementById('message-response').value = `WARNING: ${message}\nTime: ${new Date().toLocaleString()}`;
+}
+
+function showErrorMessage(message) {
+    document.getElementById('message-response').value = `ERROR: ${message}\nTime: ${new Date().toLocaleString()}`;
+}
+
+// Optional: Auto-refresh status every 30 seconds
+setInterval(() => {
+    if (selectedRaptor) {
+        fetchRaptorStatus(selectedRaptor.mac);
+    }
+}, 30000);
+</script>
+{% endblock %}
