@@ -59,7 +59,7 @@ def get_message_templates() -> List[dict]:
             'button_class': 'btn-danger',
             'button_text': 'Update Firmware',
             'parameters': {
-                'tag': {'type': 'text', "title": "Firmware version tag", "placeholder": "main"},
+                'tag': {'type': 'text', "title": "Firmware version tag", "placeholder": "type here"},
                 'force': {'type': 'checkbox', 'title': "Force update (true/false)"}
             }
         },
