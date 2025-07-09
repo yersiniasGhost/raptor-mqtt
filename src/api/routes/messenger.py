@@ -8,21 +8,17 @@ from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from . import templates
 from raptor_common.utils import LogManager
-from raptor_common.cloud.mqtt_comms import check_connection
+from raptor_common.config import MQTTConfig
+from raptor_common.cloud.mqtt_comms import check_connection, send_message_and_wait_for_response
 from raptor_common.config.mqtt_config import MQTTConfig, FORMAT_LINE_PROTOCOL
-from pydantic import BaseModel
-from raptor_common.cloud.mqtt_comms import publish_payload
 
+from pydantic import BaseModel
 
 
 logger = LogManager().get_logger(__name__)
 router = APIRouter(prefix="/messenger", tags=["messenger"])
 
-mqtt = MQTTConfig(    broker="192.168.1.25",
-    port= 1883,
-    username= "raptor-8c6466755ddacefa7cb5342367895ba8",
-    password="bf24609be86885ed90220683396ead83",
-    client_id= "Friedrich Lab", format=FORMAT_LINE_PROTOCOL)
+
 
 
 class StockMessageRequest(BaseModel):
@@ -30,14 +26,15 @@ class StockMessageRequest(BaseModel):
     template_id: str
     parameters: Optional[Dict[str, Any]] = {}
 
+
 def get_available_raptors() -> List[dict]:
     return [
         {
             'name': 'Salinas Lab',
-            'mac': '67b672097fc4a4b18476b1ed',
+            'mac': 'c13e174a93d84da632e77dec67b6242a',
             'location': "Chase's Lab",
-            "username": "raptor-8c6466755ddacefa7cb5342367895ba8",
-            "password": "bf24609be86885ed90220683396ead83",
+            "username": "chase-8c6466755ddacefa7cb5342367895ba8",
+            "password": "pwd-bf24609be86885ed90220683396ead83",
         },
         {
             'name': 'PNW Lab',
@@ -46,11 +43,33 @@ def get_available_raptors() -> List[dict]:
             "username": "raptor-8c6466755ddacefa7cb5342367895ba8",
             "password": "bf24609be86885ed90220683396ead83",
         },
+        {
+            'name': 'Development Raptor',
+            'mac': 'devel74a93d84da632e77dec67b6242a',
+            'location': "Friedrich Home",
+            "username": "raptor-c13e174a93d84da632e77dec67b6242a",
+            "password": "c13e174a93d84da632e77dec67b6242a",
+        },
     ]
 
 
 def get_message_templates() -> List[dict]:
     return [
+        {
+            "id": 'reboot_system',
+            'title': 'Reboot System',
+            'action': 'reboot',
+            'description': "Reboot the Raptor with options.",
+            'button_class': 'btn-danger',
+            'button_text': 'Update Firmware',
+            'parameters': {
+                'mode': {'type': 'radio-buttons', "title": "Reboot Mode", 'options': ["immediate", "delayed", "graceful"]},
+                'delay': {'type': 'integer', "title": "Delay for reboot", "min": 0, "max": 1800, "step": 1, "default": 0},
+                'force': {'type': 'checkbox', 'title': "Force reboot"},
+                'graceful_timeout': {'type': 'integer', "title": "Timeout for graceful shutdown", "min": 1, "max": 120,
+                                     "step": 1, "default": 30},
+            }
+        },
         {
             'id': 'firmware_update',
             'title': 'Firmware Update',
@@ -97,16 +116,12 @@ def get_message_templates() -> List[dict]:
 def get_mqtt_config() -> MQTTConfig:
     """Get MQTT broker configuration"""
     try:
-        # This should come from your raptor_common configuration
-        # from raptor_common.config import get_mqtt_config
-        # mqtt_config = get_mqtt_config()
-
-        # For now, return example config - replace with actual config loading
-        return mqtt
+        mqtt_config = MQTTConfig.get_mqtt_config()
+        return mqtt_config
 
     except Exception as e:
         logger.error(f"Error getting MQTT config: {e}")
-        return mqtt
+        return None
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -195,7 +210,8 @@ async def send_stock_message(request: StockMessageRequest):
             response_topic,
             message,
             action_id,
-            timeout_seconds=30
+            timeout_seconds=30,
+            logger=logger
         )
         if response:
             # Log the successful message send and response
@@ -348,68 +364,6 @@ def build_mqtt_message(template: Dict[str, Any], parameters: Dict[str, Any]) -> 
     }
     return message
 
-
-async def send_message_and_wait_for_response(
-        mqtt_config,
-        command_topic: str,
-        response_topic: str,
-        message: Dict[str, Any],
-        action_id: str,
-        timeout_seconds: int = 30
-) -> Optional[Dict[str, Any]]:
-    """Send MQTT message and wait for response with matching action_id"""
-
-    try:
-        async with aiomqtt.Client(
-                hostname=mqtt_config.broker,
-                port=mqtt_config.port,
-                username=mqtt_config.username,
-                password=mqtt_config.password,
-                keepalive=60,
-                identifier=f"raptor-mqtt-ui-{uuid.uuid4().hex[:8]}"
-        ) as client:
-
-            # Subscribe to response topic first
-            await client.subscribe(response_topic)
-            logger.info(f"Subscribed to response topic: {response_topic}")
-
-            # Send the command message
-            payload = json.dumps(message)
-            await client.publish(command_topic, payload, qos=1)
-            logger.info(f"Published command to topic: {command_topic}")
-            logger.info(f"Payload {payload}")
-
-            # Wait for response with timeout
-            try:
-                async with asyncio.timeout(timeout_seconds):
-                    async for mqtt_message in client.messages:
-                        try:
-                            # Parse the response
-                            print(mqtt_message)
-                            response_data = json.loads(mqtt_message.payload.decode())
-                            print(response_data)
-                            # Check if this response matches our action_id
-                            response_action_id = response_data.get('action_id') or response_data.get('action_id')
-
-                            if response_action_id == action_id:
-                                logger.info(f"Received matching response for action_id: {action_id}")
-                                return response_data
-                            else:
-                                logger.debug(
-                                    f"Received response for different action_id: {response_action_id}, expected: {action_id}")
-
-                        except json.JSONDecodeError as e:
-                            logger.warning(f"Received invalid JSON response: {mqtt_message.payload.decode()}")
-                        except Exception as e:
-                            logger.error(f"Error processing response message: {e}")
-
-            except asyncio.TimeoutError:
-                logger.warning(f"Timeout waiting for response to action_id: {action_id}")
-                return None
-
-    except Exception as e:
-        logger.error(f"Error in send_message_and_wait_for_response: {e}")
-        return None
 
 
 def log_message_sent(raptor_mac: str, template_title: str, message: Dict[str, Any]):

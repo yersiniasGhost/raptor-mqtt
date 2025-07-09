@@ -6,8 +6,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
 from raptor_common.utils import LogManager
-lm = LogManager("vmc-ui.log")
-logger = lm.get_logger("VMC")
+lm = LogManager("mqtt-dashboard.log")
+logger = lm.get_logger("DASH")
 lm.configure_library_loggers()
 from routes import (monitor, messenger)
 
