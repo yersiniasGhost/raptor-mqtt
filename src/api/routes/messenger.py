@@ -109,6 +109,21 @@ def get_message_templates() -> List[dict]:
                                                                                "vmc-ui", "cmd-controller",
                                                                                "reverse-tunnel", "network-watchdog"]}
             }
+        },
+          {
+            'id': 'inviewgw',
+            'title': 'Inview Gateway Link',
+            'action': 'inview_gw_link',
+            'description': "Stop/Restart the Raptor's SSH connection to the Invie Gateway UI",
+            'button_class': 'btn-normal',
+            'button_text': 'Manage Link',
+            'parameters': {
+                'cmd': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "connect", "disconnect"]},
+                'aws': {'type': "checkbox", "title": "Use AWS"},
+                'port': {'type': 'integer', "title": "AWS port", "min": 2000, "max": 2024, "step": 1, "default": 2004},
+                'aws_target': {'type': 'text', "title": "AWS Credentials", "placeholder": "ubuntu@54.226.49.65"},
+                'ssh-key': {"type": "selection", "title": "SSH key", "options": ["CREM3-API-03.pem"]}
+            }
         }
     ]
 
