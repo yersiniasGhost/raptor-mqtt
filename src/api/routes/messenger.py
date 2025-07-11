@@ -110,21 +110,21 @@ def get_message_templates() -> List[dict]:
                                                                                "reverse-tunnel", "network-watchdog"]}
             }
         },
-          {
-            'id': 'inviewgw',
-            'title': 'Inview Gateway Link',
-            'action': 'inview_gw_link',
-            'description': "Stop/Restart the Raptor's SSH connection to the Invie Gateway UI",
-            'button_class': 'btn-normal',
-            'button_text': 'Manage Link',
-            'parameters': {
-                'cmd': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "connect", "disconnect"]},
-                'aws': {'type': "checkbox", "title": "Use AWS"},
-                'port': {'type': 'integer', "title": "AWS port", "min": 2000, "max": 2024, "step": 1, "default": 2004},
-                'aws_target': {'type': 'text', "title": "AWS Credentials", "placeholder": "ubuntu@54.226.49.65"},
-                'ssh-key': {"type": "selection", "title": "SSH key", "options": ["CREM3-API-03.pem"]}
-            }
-        }
+        #   {
+        #     'id': 'inviewgw',
+        #     'title': 'Inview Gateway Link',
+        #     'action': 'inview_gw_link',
+        #     'description': "Stop/Restart the Raptor's SSH connection to the Invie Gateway UI",
+        #     'button_class': 'btn-normal',
+        #     'button_text': 'Manage Link',
+        #     'parameters': {
+        #         'action': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "connect", "disconnect"]},
+        #         'aws': {'type': "checkbox", "title": "Use AWS"},
+        #         'port': {'type': 'integer', "title": "AWS port", "min": 2000, "max": 2024, "step": 1, "default": 2004},
+        #         'aws-target': {'type': 'text', "title": "AWS Credentials",  "value": "ubuntu@54.226.49.65"},
+        #         'ssh-key': {"type": "selection", "title": "SSH key", "options": ["CREM3-API-03.pem"]}
+        #     }
+        # }
     ]
 
 
@@ -232,9 +232,9 @@ async def send_stock_message(request: StockMessageRequest):
             # Log the successful message send and response
             log_message_sent(request.raptor_mac, template['title'], message)
             log_message_response(request.raptor_mac, action_id, response)
-
+            status = response.get('action_status', 'unknown')
             return {
-                "success": True,
+                "success": status,
                 "message": message,
                 "response": response,
                 "topic": command_topic,
@@ -246,7 +246,7 @@ async def send_stock_message(request: StockMessageRequest):
             log_message_sent(request.raptor_mac, template['title'], message)
 
             return {
-                "success": True,
+                "success": False,
                 "message": message,
                 "response": {"error": "No response received within timeout period"},
                 "topic": command_topic,

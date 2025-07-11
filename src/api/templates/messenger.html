@@ -281,18 +281,18 @@
                     </label>
 
                     {% elif param_def.type == 'radio-buttons' %}
-                    {% for option in param_def.options %}
-                    <label style="font-size: 12px; font-weight: normal; display: block; margin: 2px 0;">
-                        <input type="radio" name="{{ param_name }}" value="{{ option }}" style="margin-right: 5px;"
-                               {% if loop.first %}checked{% endif %}>
-                        {{ option }}
-                    </label>
-                    {% endfor %}
+                        {% for option in param_def.options %}
+                        <label style="font-size: 12px; font-weight: normal; display: block; margin: 2px 0;">
+                            <input type="radio" name="{{ param_name }}" value="{{ option }}" style="margin-right: 5px;"
+                                   {% if loop.first %}checked{% endif %}>
+                            {{ option }}
+                        </label>
+                        {% endfor %}
 
                     {% elif param_def.type == 'text' %}
-                    <input type="text" name="{{ param_name }}" class="form-control"
-                           style="font-size: 12px; padding: 4px;"
-                           placeholder="{{ param_def.placeholder | default('') }}">
+                        <input type="text" name="{{ param_name }}" class="form-control"
+                               style="font-size: 12px; padding: 4px;"
+                               value="{{ param_def.value | default('') }}">
 
                 {% elif param_def.type == 'number' %}
                 <input type="number" name="{{ param_name }}" class="form-control"
@@ -452,38 +452,93 @@ async function sendStockMessage(templateId) {
         alert('Please select a raptor first');
         return;
     }
-
-    // Collect form data for this template
     const form = document.getElementById(`form-${templateId}`);
     const params = {};
+const formData = new FormData(form);
+// Get all form inputs at once for better performance
+const allInputs = form.querySelectorAll('input, select, textarea');
+const inputMap = new Map();
 
-    if (form) {
-        const formData = new FormData(form);
-
-        // Handle different input types
-        for (let [key, value] of formData.entries()) {
-            const input = form.querySelector(`input[name="${key}"], select[name="${key}"]`);
-            if (input) {
-                if (input.type === 'checkbox') {
-                    params[key] = input.checked;
-                } else if (input.type === 'number') {
-                    // Convert number inputs to actual numbers
-                    const numValue = parseFloat(value);
-                    params[key] = isNaN(numValue) ? value : numValue;
-                } else {
-                    params[key] = value;
-                }
-            }
-        }
-
-        // Handle unchecked checkboxes (they don't appear in FormData)
-        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            if (!formData.has(checkbox.name)) {
-                params[checkbox.name] = false;
-            }
-        });
+// Create a map of inputs by name for faster lookup
+allInputs.forEach(input => {
+    if (input.name) {
+        inputMap.set(input.name, input);
     }
+});
+
+// Process FormData entries
+for (let [key, value] of formData.entries()) {
+    const input = inputMap.get(key);
+
+    if (input) {
+        switch (input.type) {
+            case 'checkbox':
+                // For checkboxes, use the checked state
+                params[key] = input.checked;
+                break;
+
+            case 'number':
+            case 'range':
+                // Convert numeric inputs to numbers
+                const numValue = parseFloat(value);
+                params[key] = isNaN(numValue) ? value : numValue;
+                break;
+
+            case 'radio':
+                params[key] = value;
+                break;
+
+            case 'file':
+                // Handle file inputs specially
+                params[key] = input.files.length > 0 ? input.files[0] : null;
+                break;
+
+            default:
+                // Handle text, email, password, url, tel, etc.
+                // Trim whitespace from text inputs
+                params[key] = typeof value === 'string' ? value.trim() : value;
+                break;
+        }
+    } else {
+        // Input not found in DOM, but value exists in FormData
+        // This might be a dynamically created input or a name mismatch
+        console.warn(`Input with name "${key}" not found in form, using raw value`);
+        params[key] = typeof value === 'string' ? value.trim() : value;
+    }
+}
+
+// Handle unchecked checkboxes and unselected radio buttons
+const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+const radioGroups = new Set();
+
+checkboxes.forEach(checkbox => {
+    if (checkbox.name && !formData.has(checkbox.name)) {
+        params[checkbox.name] = false;
+    }
+});
+
+// Handle radio button groups - ensure each group has a value
+form.querySelectorAll('input[type="radio"]').forEach(radio => {
+    if (radio.name) {
+        radioGroups.add(radio.name);
+    }
+});
+
+radioGroups.forEach(groupName => {
+    if (!params.hasOwnProperty(groupName)) {
+        // No radio button was selected in this group
+        params[groupName] = null;
+    }
+});
+
+// Handle select elements that might not have a selection
+form.querySelectorAll('select').forEach(select => {
+    if (select.name && !params.hasOwnProperty(select.name)) {
+        params[select.name] = select.multiple ? [] : (select.value || null);
+    }
+});
+
+console.log('Final params object:', params);
 
     try {
         const response = await fetch('/messenger/send-stock-message', {
@@ -502,21 +557,27 @@ async function sendStockMessage(templateId) {
             updateMessagePreview(result.message);
             updateMessageCount('sent');
 
+            console.log(JSON.stringify(result, null, 2));
             // Handle response
             if (result.response && !result.response.error) {
                 showSuccessMessage('Message sent and response received successfully');
                 updateMessageResponse(result.response);
+                updateMessageCount('received');
+            } else if (result.response && result.response.error) {
+                showWarningMessage(result);
+                updateMessageCount('received');
             } else if (result.warning) {
-                showWarningMessage(result.warning);
-                updateMessageResponse(result.response);
+                showWarningMessage(JSON.stringify(result, null, 2));
+                updateMessageResponse(result);
+                updateMessageCount('received');
             } else {
-                showSuccessMessage('Message sent successfully');
+                showErrorMessage({"error":'No response received'});
             }
         } else {
-            showErrorMessage('Failed to send message: ' + result.error);
+            showErrorMessage({"error":'Failed to send message: ' + result.error});
         }
     } catch (error) {
-        showErrorMessage('Error sending message: ' + error.message);
+        showErrorMessage({"error":'Error sending message: ' + error.message});
     }
 }
 
@@ -620,15 +681,21 @@ function updateMessageCount(type) {
 }
 
 function showSuccessMessage(message) {
-    document.getElementById('message-response').value = `SUCCESS: ${message}\nTime: ${new Date().toLocaleString()}`;
+    let txt = JSON.stringify(message, null, 2);
+    txt = txt.replace(/\\n/g, '\n');
+    document.getElementById('message-response').value = `SUCCESS:\n${txt}\nTime: ${new Date().toLocaleString()}`;
 }
 
 function showWarningMessage(message) {
-    document.getElementById('message-response').value = `WARNING: ${message}\nTime: ${new Date().toLocaleString()}`;
+    let txt = JSON.stringify(message, null, 2);
+    txt = txt.replace(/\\n/g, '\n');
+    document.getElementById('message-response').value = `WARNING:\n${txt}\nTime: ${new Date().toLocaleString()}`;
 }
 
 function showErrorMessage(message) {
-    document.getElementById('message-response').value = `ERROR: ${message}\nTime: ${new Date().toLocaleString()}`;
+    let txt = JSON.stringify(message, null, 2);
+    txt = txt.replace(/\\n/g, '\n');
+    document.getElementById('message-response').value = `ERROR:\n${txt}\nTime: ${new Date().toLocaleString()}`;
 }
 
 // Optional: Auto-refresh status every 30 seconds
