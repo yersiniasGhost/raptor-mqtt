@@ -263,9 +263,11 @@
             <form id="form-{{ template.id }}" style="margin: 10px 0;">
                 {% for param_name, param_def in template.parameters.items() %}
                 <div class="form-group" style="margin-bottom: 10px;">
+                    {% if param_def.type != 'hidden': %}
                     <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 3px;">
                         {{ param_def.title }}:
                     </label>
+                    {% endif %}
 
                     {% if param_def.type == 'selection' %}
                     <select name="{{ param_name }}" class="form-control" style="font-size: 12px; padding: 4px;">
@@ -293,6 +295,9 @@
                         <input type="text" name="{{ param_name }}" class="form-control"
                                style="font-size: 12px; padding: 4px;"
                                value="{{ param_def.value | default('') }}">
+                    {% elif param_def.type == 'hidden' %}
+                         <input type="hidden" name="{{ param_name }}" value="{{ param_def.value | default('') }}">
+
 
                 {% elif param_def.type == 'number' %}
                 <input type="number" name="{{ param_name }}" class="form-control"

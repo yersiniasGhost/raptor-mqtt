@@ -79,7 +79,8 @@ def get_message_templates() -> List[dict]:
             'button_text': 'Update Firmware',
             'parameters': {
                 'tag': {'type': 'text', "title": "Firmware version tag", "placeholder": "type here"},
-                'force': {'type': 'checkbox', 'title': "Force update (true/false)"}
+                'force': {'type': 'checkbox', 'title': "Force update (true/false)"},
+                'db_migrate': {'type': 'checkbox', 'title': "Run database migrator"},
             }
         },
         {
@@ -106,8 +107,19 @@ def get_message_templates() -> List[dict]:
             'parameters': {
                 'cmd': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "stop", "restart"]},
                 'target': {'type': "selection", "title": "Target", "options": [ "iot-controller",
-                                                                               "vmc-ui", "cmd-controller",
+                                                                               "vmc-ui", "cmd-controller", "cellular-init",
                                                                                "reverse-tunnel", "network-watchdog"]}
+            }
+        },
+        {
+            'id': 'migrate',
+            'title': 'Database migration',
+            'action': 'database_migrator',
+            'description': "Run the database migration using schema.sl",
+            'button_class': 'btn-warning',
+            'button_text': 'Run Migration',
+            'parameters': {
+                "hidden": {'type': 'hidden', 'title': ""}
             }
         },
         #   {
