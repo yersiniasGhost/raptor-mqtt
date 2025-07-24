@@ -81,9 +81,20 @@ def get_message_templates() -> List[dict]:
                 'tag': {'type': 'text', "title": "Firmware version tag", "placeholder": "type here"},
                 'force': {'type': 'checkbox', 'title': "Force update (true/false)"},
                 'db_migrate': {'type': 'checkbox', 'title': "Run database migrator"},
-                "confirm_text": {'type': 'confirm-text', 'value': "Running firmware update, may take a minute or two."}
-            },
-            "wait_time": 120,
+                "confirm_text": {'type': 'confirm-text', 'value': "Running firmware update, may take a minute or two."},
+                'timeout': {'type': 'timeout', 'value': 120}
+            }
+        },
+        {
+            'id': 'system_status',
+            'title': 'System Status',
+            'action': 'system_status',
+            'description': 'Get the firmware version, database schema state, etc.',
+            'button_class': 'btn-normal',
+            'button_text': 'Get State',
+            'parameters': {
+                'timeout': {'type': 'timeout', 'value': 30}
+            }
         },
         {
             'id': 'taillog',
@@ -96,7 +107,7 @@ def get_message_templates() -> List[dict]:
                 'lines': {'type': 'integer', "title": "Line count", "min": 20, "max": 1000, "step": 100, "default": 50},
                 'process': {'type': "selection", "title": "Target", "options": [ "iot-controller",
                                                                                  "vmc-ui", "cmd-controller",
-                                                                                 "reverse-tunnel", "network-watchdog"]},
+                                                                                 "reverse-tunnel", "network-watchdog"]}
             }
         },
         {
@@ -149,6 +160,7 @@ def get_message_templates() -> List[dict]:
             'button_text': "Reconfigure",
             'parameters': {
                 'api_url': {'type': 'text', 'title': 'CREM3 API URL', 'placeholder': 'http://3.80.169.34:3000'},
+                'timeout': {'type': 'timeout', 'value': 60}
             }
         }
 
@@ -259,6 +271,8 @@ async def send_stock_message(request: StockMessageRequest):
         # Determine the topic for this raptor
         command_topic = f"raptors/{request.raptor_mac}/messages"
         response_topic = f"raptors/{request.raptor_mac}/cmd_response"
+        timeout = 30
+        print(request.parameters)
 
         # Send message and wait for response
         response = await send_message_and_wait_for_response(

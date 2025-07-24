@@ -262,7 +262,7 @@
             <form id="form-{{ template.id }}" style="margin: 10px 0;">
                 {% for param_name, param_def in template.parameters.items() %}
                 <div class="form-group" style="margin-bottom: 10px;">
-                    {% if param_def.type != 'hidden' and param_def.type != 'confirm-text': %}
+                    {% if param_def.type != 'hidden' and param_def.type != 'confirm-text' and param_def.type != 'timeout': %}
                     <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 3px;">
                         {{ param_def.title }}:
                     </label>
@@ -298,6 +298,8 @@
                          <input type="hidden" name="{{ param_name }}" value="{{ param_def.value | default('') }}">
                     {% elif param_def.type == 'confirm-text' %}
                          <input type="hidden" name="confirm_text" value="{{ param_def.value | default('') }}">
+                    {% elif param_def.type == 'timeout' %}
+                         <input type="hidden" name="timeout" value="{{ param_def.value | default('') }}">
 
 
                 {% elif param_def.type == 'number' %}
@@ -465,6 +467,11 @@ async function sendStockMessage(templateId) {
             return; // User cancelled
         }
     }
+    let timeout = 30;
+    const timeoutInput = form.querySelector('input[name="timeout"]');
+    if (timeoutInput && timeoutInput.value) {
+        timeout = timeoutInput.value;
+    }
 
     const params = {};
     const formData = new FormData(form);
@@ -505,6 +512,8 @@ for (let [key, value] of formData.entries()) {
                 // Handle file inputs specially
                 params[key] = input.files.length > 0 ? input.files[0] : null;
                 break;
+            case 'timeout':
+
 
             default:
                 // Handle text, email, password, url, tel, etc.
@@ -551,6 +560,7 @@ form.querySelectorAll('select').forEach(select => {
     }
 });
 
+params['timeout'] = timeout;
 console.log('Final params object:', params);
     try {
         const response = await fetch('/messenger/send-stock-message', {
