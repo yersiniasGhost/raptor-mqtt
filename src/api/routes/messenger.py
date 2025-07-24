@@ -115,13 +115,41 @@ def get_message_templates() -> List[dict]:
             'id': 'migrate',
             'title': 'Database migration',
             'action': 'database_migrator',
-            'description': "Run the database migration using schema.sl",
+            'description': "Run the database migration using schema.sql",
             'button_class': 'btn-warning',
             'button_text': 'Run Migration',
             'parameters': {
                 "hidden": {'type': 'hidden', 'title': ""}
             }
         },
+            {
+                "id": 'reverse_tunnel',
+                'title': 'Reverse Tunnel',
+                'action': 'create_reverse_tunnel',
+                'description': "Start, stop and get status of the reverse tunnel",
+                'button_class': 'btn-warning',
+                'button_text': "Run Action",
+                'parameters': {
+                    'action': {'type': 'selection', 'title': "Tunnel Operations",
+                               'options': ['start', 'restart', 'stop', 'status']},
+                    'ui_port': {'type': 'text', 'title': 'AWS UI port', 'placeholder': '2004'},
+                    'tunnel_port': {'type': 'text', 'title': 'AWS SSH tunnel port', 'placeholder': '2024'},
+                    'server_user': {'type': 'text', 'title': 'AWS user', 'placeholder': 'ubuntu'},
+                    'server_ip': {'type': 'text', 'title': 'AWS server IP', 'placeholder': "54.226.49.65"}
+                }
+            },
+        {
+            "id": 'reconfigure',
+            'title': 'Reconfigure Raptor',
+            'action': 'reconfigure',
+            'description': "Force the Raptor to request and update configuration",
+            'button_class': 'btn-warning',
+            'button_text': "Reconfigure",
+            'parameters': {
+                'api_url': {'type': 'text', 'title': 'CREM3 API URL', 'placeholder': 'http://3.80.169.34:3000'},
+            }
+        }
+
         #   {
         #     'id': 'inviewgw',
         #     'title': 'Inview Gateway Link',
