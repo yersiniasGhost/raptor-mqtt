@@ -559,7 +559,11 @@ updateMessageCount('sent');
         const response = await fetch('/messenger/send-stock-message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
+            body: JSON.stringify({
+                raptor_mac: selectedRaptor.mac,
+                template_id: templateId,
+                parameters: params
+            })
         });
 
         const result = await response.json();
