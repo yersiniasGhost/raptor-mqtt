@@ -81,7 +81,9 @@ def get_message_templates() -> List[dict]:
                 'tag': {'type': 'text', "title": "Firmware version tag", "placeholder": "type here"},
                 'force': {'type': 'checkbox', 'title': "Force update (true/false)"},
                 'db_migrate': {'type': 'checkbox', 'title': "Run database migrator"},
-            }
+                "confirm_text": {'type': 'confirm-text', 'value': "Running firmware update, may take a minute or two."}
+            },
+            "wait_time": 120,
         },
         {
             'id': 'taillog',
@@ -93,11 +95,11 @@ def get_message_templates() -> List[dict]:
             'parameters': {
                 'lines': {'type': 'integer', "title": "Line count", "min": 20, "max": 1000, "step": 100, "default": 50},
                 'process': {'type': "selection", "title": "Target", "options": [ "iot-controller",
-                                                                               "vmc-ui", "cmd-controller",
-                                                                               "reverse-tunnel", "network-watchdog"]}
+                                                                                 "vmc-ui", "cmd-controller",
+                                                                                 "reverse-tunnel", "network-watchdog"]},
             }
         },
-          {
+        {
             'id': 'systemctl',
             'title': 'Service Management',
             'action': 'systemctl',
@@ -107,8 +109,8 @@ def get_message_templates() -> List[dict]:
             'parameters': {
                 'cmd': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "stop", "restart"]},
                 'target': {'type': "selection", "title": "Target", "options": [ "iot-controller",
-                                                                               "vmc-ui", "cmd-controller", "cellular-init",
-                                                                               "reverse-tunnel", "network-watchdog"]}
+                                                                                "vmc-ui", "cmd-controller", "cellular-init",
+                                                                                "reverse-tunnel", "network-watchdog"]}
             }
         },
         {
@@ -122,22 +124,22 @@ def get_message_templates() -> List[dict]:
                 "hidden": {'type': 'hidden', 'title': ""}
             }
         },
-            {
-                "id": 'reverse_tunnel',
-                'title': 'Reverse Tunnel',
-                'action': 'create_reverse_tunnel',
-                'description': "Start, stop and get status of the reverse tunnel",
-                'button_class': 'btn-warning',
-                'button_text': "Run Action",
-                'parameters': {
-                    'action': {'type': 'selection', 'title': "Tunnel Operations",
-                               'options': ['start', 'restart', 'stop', 'status']},
-                    'ui_port': {'type': 'text', 'title': 'AWS UI port', 'placeholder': '2004'},
-                    'tunnel_port': {'type': 'text', 'title': 'AWS SSH tunnel port', 'placeholder': '2024'},
-                    'server_user': {'type': 'text', 'title': 'AWS user', 'placeholder': 'ubuntu'},
-                    'server_ip': {'type': 'text', 'title': 'AWS server IP', 'placeholder': "54.226.49.65"}
-                }
-            },
+        {
+            "id": 'reverse_tunnel',
+            'title': 'Reverse Tunnel',
+            'action': 'create_reverse_tunnel',
+            'description': "Start, stop and get status of the reverse tunnel",
+            'button_class': 'btn-warning',
+            'button_text': "Run Action",
+            'parameters': {
+                'action': {'type': 'selection', 'title': "Tunnel Operations",
+                           'options': ['start', 'restart', 'stop', 'status']},
+                'ui_port': {'type': 'text', 'title': 'AWS UI port', 'placeholder': '2004'},
+                'tunnel_port': {'type': 'text', 'title': 'AWS SSH tunnel port', 'placeholder': '2024'},
+                'server_user': {'type': 'text', 'title': 'AWS user', 'placeholder': 'ubuntu'},
+                'server_ip': {'type': 'text', 'title': 'AWS server IP', 'placeholder': "54.226.49.65"}
+            }
+        },
         {
             "id": 'reconfigure',
             'title': 'Reconfigure Raptor',

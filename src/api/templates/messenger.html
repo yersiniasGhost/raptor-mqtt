@@ -104,7 +104,6 @@
         margin-bottom: 20px;
         padding: 15px;
         background-color: #f8f9fa;
-        border-radius: 5px;lor: #f8f9fa;
         border-radius: 5px;
     }
 
@@ -263,7 +262,7 @@
             <form id="form-{{ template.id }}" style="margin: 10px 0;">
                 {% for param_name, param_def in template.parameters.items() %}
                 <div class="form-group" style="margin-bottom: 10px;">
-                    {% if param_def.type != 'hidden': %}
+                    {% if param_def.type != 'hidden' and param_def.type != 'confirm-text': %}
                     <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 3px;">
                         {{ param_def.title }}:
                     </label>
@@ -297,6 +296,8 @@
                                value="{{ param_def.value | default('') }}">
                     {% elif param_def.type == 'hidden' %}
                          <input type="hidden" name="{{ param_name }}" value="{{ param_def.value | default('') }}">
+                    {% elif param_def.type == 'confirm-text' %}
+                         <input type="hidden" name="confirm_text" value="{{ param_def.value | default('') }}">
 
 
                 {% elif param_def.type == 'number' %}
@@ -458,18 +459,25 @@ async function sendStockMessage(templateId) {
         return;
     }
     const form = document.getElementById(`form-${templateId}`);
-    const params = {};
-const formData = new FormData(form);
-// Get all form inputs at once for better performance
-const allInputs = form.querySelectorAll('input, select, textarea');
-const inputMap = new Map();
-
-// Create a map of inputs by name for faster lookup
-allInputs.forEach(input => {
-    if (input.name) {
-        inputMap.set(input.name, input);
+    const confirmInput = form.querySelector('input[name="confirm_text"]');
+    if (confirmInput && confirmInput.value) {
+        if (!confirm(confirmInput.value)) {
+            return; // User cancelled
+        }
     }
-});
+
+    const params = {};
+    const formData = new FormData(form);
+    // Get all form inputs at once for better performance
+    const allInputs = form.querySelectorAll('input, select, textarea');
+    const inputMap = new Map();
+
+    // Create a map of inputs by name for faster lookup
+    allInputs.forEach(input => {
+        if (input.name) {
+            inputMap.set(input.name, input);
+        }
+    });
 
 // Process FormData entries
 for (let [key, value] of formData.entries()) {
@@ -544,7 +552,6 @@ form.querySelectorAll('select').forEach(select => {
 });
 
 console.log('Final params object:', params);
-
     try {
         const response = await fetch('/messenger/send-stock-message', {
             method: 'POST',
