@@ -554,6 +554,8 @@ const body = {
             };
 updateMessagePreview(body);
 updateMessageCount('sent');
+updateMessageResponse('Running request....');
+
 
     try {
         const response = await fetch('/messenger/send-stock-message', {
