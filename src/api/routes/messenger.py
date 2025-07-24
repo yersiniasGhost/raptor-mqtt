@@ -78,7 +78,7 @@ def get_message_templates() -> List[dict]:
             'button_class': 'btn-danger',
             'button_text': 'Update Firmware',
             'parameters': {
-                'tag': {'type': 'text', "title": "Firmware version tag", "placeholder": "type here"},
+                'tag': {'type': 'text', "title": "Firmware version tag", "default": "main"},
                 'force': {'type': 'checkbox', 'title': "Force update (true/false)", "default": False},
                 'db_migrate': {'type': 'checkbox', 'title': "Run database migrator (not implemented yet)", "default": False},
                 'restart_services': {'type': 'checkbox', 'title': "Restart Raptor services", 'default': True},

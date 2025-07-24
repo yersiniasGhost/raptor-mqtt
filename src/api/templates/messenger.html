@@ -486,77 +486,62 @@ async function sendStockMessage(templateId) {
         }
     });
 
-// Process FormData entries
-for (let [key, value] of formData.entries()) {
-    const input = inputMap.get(key);
+// Process ALL inputs in the form, not just FormData entries
+allInputs.forEach(input => {
+    if (!input.name) return; // Skip inputs without names
 
-    if (input) {
-        switch (input.type) {
-            case 'checkbox':
-                // For checkboxes, use the checked state
-                params[key] = input.checked;
-                break;
+    switch (input.type) {
+        case 'checkbox':
+            params[input.name] = input.checked;
+            break;
 
-            case 'number':
-            case 'range':
-                // Convert numeric inputs to numbers
-                const numValue = parseFloat(value);
-                params[key] = isNaN(numValue) ? value : numValue;
-                break;
+        case 'radio':
+            if (input.checked) {
+                params[input.name] = input.value;
+            }
+            break;
 
-            case 'radio':
-                params[key] = value;
-                break;
+        case 'number':
+        case 'range':
+            const numValue = parseFloat(input.value);
+            params[input.name] = isNaN(numValue) ? input.value : numValue;
+            break;
 
-            case 'file':
-                // Handle file inputs specially
-                params[key] = input.files.length > 0 ? input.files[0] : null;
-                break;
-            case 'timeout':
+        case 'text':
+        case 'email':
+        case 'password':
+        case 'url':
+        case 'tel':
+        case 'hidden':
+            // Use input.value directly, which includes defaults
+            params[input.name] = input.value ? input.value.trim() : '';
+            console.log(`Text input ${input.name}:`, input.value);
+            break;
 
+        case 'select-one':
+        case 'select-multiple':
+            if (input.multiple) {
+                params[input.name] = Array.from(input.selectedOptions).map(opt => opt.value);
+            } else {
+                params[input.name] = input.value;
+            }
+            break;
 
-            default:
-                // Handle text, email, password, url, tel, etc.
-                // Trim whitespace from text inputs
-                params[key] = typeof value === 'string' ? value.trim() : value;
-                break;
-        }
-    } else {
-        // Input not found in DOM, but value exists in FormData
-        // This might be a dynamically created input or a name mismatch
-        console.warn(`Input with name "${key}" not found in form, using raw value`);
-        params[key] = typeof value === 'string' ? value.trim() : value;
-    }
-}
-
-// Handle unchecked checkboxes and unselected radio buttons
-const checkboxes = form.querySelectorAll('input[type="checkbox"]');
-const radioGroups = new Set();
-
-checkboxes.forEach(checkbox => {
-    if (checkbox.name && !formData.has(checkbox.name)) {
-        params[checkbox.name] = false;
+        default:
+            params[input.name] = input.value;
+            break;
     }
 });
 
-// Handle radio button groups - ensure each group has a value
+// Handle radio button groups that have no selection
+const radioGroups = new Set();
 form.querySelectorAll('input[type="radio"]').forEach(radio => {
-    if (radio.name) {
-        radioGroups.add(radio.name);
-    }
+    radioGroups.add(radio.name);
 });
 
 radioGroups.forEach(groupName => {
     if (!params.hasOwnProperty(groupName)) {
-        // No radio button was selected in this group
         params[groupName] = null;
-    }
-});
-
-// Handle select elements that might not have a selection
-form.querySelectorAll('select').forEach(select => {
-    if (select.name && !params.hasOwnProperty(select.name)) {
-        params[select.name] = select.multiple ? [] : (select.value || null);
     }
 });
 
