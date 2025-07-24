@@ -562,22 +562,24 @@ form.querySelectorAll('select').forEach(select => {
 
 params['timeout'] = timeout;
 console.log('Final params object:', params);
+const body = {
+                raptor_mac: selectedRaptor.mac,
+                template_id: templateId,
+                params: params
+            };
+updateMessagePreview(body);
+updateMessageCount('sent');
+
     try {
         const response = await fetch('/messenger/send-stock-message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                raptor_mac: selectedRaptor.mac,
-                template_id: templateId,
-                parameters: params
-            })
+            body: JSON.stringify(body)
         });
 
         const result = await response.json();
 
         if (result.success) {
-            updateMessagePreview(result.message);
-            updateMessageCount('sent');
 
             console.log(JSON.stringify(result, null, 2));
             // Handle response
@@ -628,14 +630,15 @@ async function sendCustomMessage() {
     }
 
     try {
-        const response = await fetch('/messenger/send-custom-message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+    const body = JSON.stringify({
                 raptor_mac: selectedRaptor.mac,
                 action: action,
                 params: params
             })
+        const response = await fetch('/messenger/send-custom-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: body
         });
 
         const result = await response.json();

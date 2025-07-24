@@ -61,7 +61,7 @@ def get_message_templates() -> List[dict]:
             'action': 'reboot',
             'description': "Reboot the Raptor with options.",
             'button_class': 'btn-danger',
-            'button_text': 'Update Firmware',
+            'button_text': 'Reboot Raptor',
             'parameters': {
                 'mode': {'type': 'radio-buttons', "title": "Reboot Mode", 'options': ["immediate", "delayed", "graceful"]},
                 'delay': {'type': 'integer', "title": "Delay for reboot", "min": 0, "max": 1800, "step": 1, "default": 0},
@@ -271,8 +271,7 @@ async def send_stock_message(request: StockMessageRequest):
         # Determine the topic for this raptor
         command_topic = f"raptors/{request.raptor_mac}/messages"
         response_topic = f"raptors/{request.raptor_mac}/cmd_response"
-        timeout = 30
-        print(request.parameters)
+        timeout = request.parameters.get('timeout', 30)
 
         # Send message and wait for response
         response = await send_message_and_wait_for_response(
@@ -281,7 +280,7 @@ async def send_stock_message(request: StockMessageRequest):
             response_topic,
             message,
             action_id,
-            timeout_seconds=30,
+            timeout_seconds=timeout,
             logger=logger
         )
         if response:
