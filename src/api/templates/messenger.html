@@ -277,7 +277,7 @@
 
                     {% elif param_def.type == 'checkbox' %}
                     <label style="font-size: 12px; font-weight: normal;">
-                        <input type="checkbox" name="{{ param_name }}" value="true" style="margin-right: 5px;">
+                        <input type="checkbox" name="{{ param_name }}" {% if param_def.default %}checked{% endif %} style="margin-right: 5px;">
                         {{ param_def.title }}
                     </label>
 
