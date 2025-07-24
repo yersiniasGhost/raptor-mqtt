@@ -145,10 +145,10 @@ def get_message_templates() -> List[dict]:
             'parameters': {
                 'action': {'type': 'selection', 'title': "Tunnel Operations",
                            'options': ['start', 'restart', 'stop', 'status']},
-                'ui_port': {'type': 'text', 'title': 'AWS UI port', 'placeholder': '2004'},
-                'tunnel_port': {'type': 'text', 'title': 'AWS SSH tunnel port', 'placeholder': '2024'},
-                'server_user': {'type': 'text', 'title': 'AWS user', 'placeholder': 'ubuntu'},
-                'server_ip': {'type': 'text', 'title': 'AWS server IP', 'placeholder': "54.226.49.65"}
+                'ui_port': {'type': 'text', 'title': 'AWS UI port', 'default': '2004'},
+                'tunnel_port': {'type': 'text', 'title': 'AWS SSH tunnel port', 'default': '2024'},
+                'server_user': {'type': 'text', 'title': 'AWS user', 'default': 'ubuntu'},
+                'server_ip': {'type': 'text', 'title': 'AWS server IP', 'default': "54.226.49.65"}
             }
         },
         {

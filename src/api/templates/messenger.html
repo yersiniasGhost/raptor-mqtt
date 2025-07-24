@@ -293,7 +293,7 @@
                     {% elif param_def.type == 'text' %}
                         <input type="text" name="{{ param_name }}" class="form-control"
                                style="font-size: 12px; padding: 4px;"
-                               value="{{ param_def.value | default('') }}">
+                               value="{{ param_def.default | default('') }}">
                     {% elif param_def.type == 'hidden' %}
                          <input type="hidden" name="{{ param_name }}" value="{{ param_def.value | default('') }}">
                     {% elif param_def.type == 'confirm-text' %}
