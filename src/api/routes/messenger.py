@@ -272,7 +272,7 @@ async def send_stock_message(request: StockMessageRequest):
         # Determine the topic for this raptor
         command_topic = f"raptors/{request.raptor_mac}/messages"
         response_topic = f"raptors/{request.raptor_mac}/cmd_response"
-        timeout = request.parameters.get('timeout', 30)
+        timeout = int(request.parameters.get('timeout', 30))
 
         # Send message and wait for response
         response = await send_message_and_wait_for_response(
