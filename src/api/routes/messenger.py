@@ -261,10 +261,10 @@ async def send_stock_message(request: StockMessageRequest):
 
         # Validate parameters against template
         validated_params = validate_template_parameters(template, request.parameters)
-
         # Build the MQTT message
         message = build_mqtt_message(template, validated_params)
         action_id = message['action_id']
+
 
         # Get MQTT configuration
         mqtt_config = get_mqtt_config()
