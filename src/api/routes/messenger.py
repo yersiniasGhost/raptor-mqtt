@@ -91,7 +91,7 @@ def get_message_templates() -> List[dict]:
             'title': 'System Status',
             'action': 'system_status',
             'description': 'Get the firmware version, database schema state, etc.',
-            'button_class': 'btn-normal',
+            'button_class': 'btn-primary',
             'button_text': 'Get State',
             'parameters': {
                 'timeout': {'type': 'timeout', 'value': 30}
@@ -102,13 +102,13 @@ def get_message_templates() -> List[dict]:
             'title': 'Tail Logs',
             'action': 'tail_log',
             'description': "Tail the log file for the selected process",
-            'button_class': 'btn-normal',
+            'button_class': 'btn-primary',
             'button_text': 'Tail Log File',
             'parameters': {
                 'lines': {'type': 'integer', "title": "Line count", "min": 20, "max": 1000, "step": 100, "default": 50},
                 'process': {'type': "selection", "title": "Target", "options": [ "iot-controller",
                                                                                  "vmc-ui", "cmd-controller",
-                                                                                 "reverse-tunnel", "network-watchdog"]}
+                                                                                 "network-watchdog"]}
             }
         },
         {
@@ -122,7 +122,7 @@ def get_message_templates() -> List[dict]:
                 'cmd': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "stop", "restart"]},
                 'target': {'type': "selection", "title": "Target", "options": [ "iot-controller",
                                                                                 "vmc-ui", "cmd-controller", "cellular-init",
-                                                                                "reverse-tunnel", "network-watchdog"]}
+                                                                                "network-watchdog"]}
             }
         },
         {
@@ -153,14 +153,29 @@ def get_message_templates() -> List[dict]:
             }
         },
         {
+            "id": 'inview_gw',
+            'title': 'Inview Gateway UI',
+            'action': 'inview_gw_ui',
+            'description': "Start and stop the reverse tunnel into the Inview GW",
+            'button_class': 'btn-primary',
+            'button_text': "Inview GW",
+            'parameters': {
+                'action': {'type': 'selection', 'title': "Tunnel Operations",
+                           'options': ['start', 'stop']},
+                'ui_port': {'type': 'text', 'title': 'AWS UI port', 'default': '2005'},
+                'server_user': {'type': 'text', 'title': 'AWS user', 'default': 'ubuntu'},
+                'server_ip': {'type': 'text', 'title': 'AWS server IP', 'default': "54.226.49.65"}
+            }
+        },
+        {
             "id": 'reconfigure',
             'title': 'Reconfigure Raptor',
             'action': 'reconfigure',
             'description': "Force the Raptor to request and update configuration",
-            'button_class': 'btn-warning',
+            'button_class': 'btn-danger',
             'button_text': "Reconfigure",
             'parameters': {
-                'api_url': {'type': 'text', 'title': 'CREM3 API URL', 'placeholder': 'http://3.80.169.34:3000'},
+                'api_url': {'type': 'text', 'title': 'CREM3 API URL', 'default': 'http://3.80.169.34:3000'},
                 'timeout': {'type': 'timeout', 'value': 60}
             }
         }
@@ -170,7 +185,7 @@ def get_message_templates() -> List[dict]:
         #     'title': 'Inview Gateway Link',
         #     'action': 'inview_gw_link',
         #     'description': "Stop/Restart the Raptor's SSH connection to the Invie Gateway UI",
-        #     'button_class': 'btn-normal',
+        #     'button_class': 'btn-primary',
         #     'button_text': 'Manage Link',
         #     'parameters': {
         #         'action': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "connect", "disconnect"]},
