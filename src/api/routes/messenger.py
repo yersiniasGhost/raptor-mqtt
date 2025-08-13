@@ -122,7 +122,7 @@ def get_message_templates() -> List[dict]:
                 'cmd': {'type': 'radio-buttons', "title": "Command", 'options': ["status", "stop", "restart"]},
                 'target': {'type': "selection", "title": "Target", "options": [ "iot-controller",
                                                                                 "vmc-ui", "cmd-controller", "cellular-init",
-                                                                                "network-watchdog"]}
+                                                                                "raptor-watchdog"]}
             }
         },
         {
