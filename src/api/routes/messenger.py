@@ -30,9 +30,9 @@ class StockMessageRequest(BaseModel):
 def get_available_raptors() -> List[dict]:
     return [
         {
-            'name': 'Salinas Lab',
+            'name': 'Rincon Water District Demo',
             'mac': 'c13e174a93d84da632e77dec67b6242a',
-            'location': "Chase's Lab",
+            'location': "1920 N Iris Ln, Escondido, CA",
             "username": "chase-8c6466755ddacefa7cb5342367895ba8",
             "password": "pwd-bf24609be86885ed90220683396ead83",
         },
